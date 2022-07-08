@@ -1,17 +1,18 @@
 const express = require("express");
-const crypto = require('crypto');
+const { Worker } = require("worker_threads");
 
 const app = express();
 
     
 app.get('/', (req, res) => {
-    const start = Date.now();
-    crypto.pbkdf2('a', 'b', 100000, 512, 'sha512', () => {
-        console.log(`This request took ${Date.now() - start} seconds`);
-        res.send("Hi there!!!");
-    })
-    
+    const worker = new Worker('./worker.js');
+    worker.on('message', data => {
+        res.send(data);
+    });
+    worker.postMessage('Start!');
 });
 
-app.listen(3000);
+app.listen(3000, () => { 
+    console.log("Server running at 3000");
+});
 
