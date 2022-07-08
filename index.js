@@ -1,32 +1,18 @@
-process.env.UV_THREADPOOL_SIZE = 1;
-const cluster = require("cluster");
+const express = require("express");
+const { Worker } = require("worker_threads");
 
-if(cluster.isMaster){
-    // I am the master/cluster manager
-    console.log(`Am I master? ${cluster.isMaster}.\nMy thread size is: ${process.env.UV_THREADPOOL_SIZE}`);
-
-    cluster.fork(); // causes index.js to be executed again but in child mode
-    cluster.fork();
-    cluster.fork();
-    // cluster.fork();
-}else{
-    // I am a child, and my job is to run the server
-    console.log(`Am I master? ${cluster.isMaster}.\nMy thread size is: ${process.env.UV_THREADPOOL_SIZE}`);
-
-    const express = require("express");
-    const crypto = require('crypto');
-
-    const app = express();
+const app = express();
 
     
-    app.get('/', (req, res) => {
-        crypto.pbkdf2('a', 'b', 100000, 512, 'sha512', () => {
-            res.send("Hi there!!!");
-        })
-        
+app.get('/', (req, res) => {
+    const worker = new Worker('./worker.js');
+    worker.on('message', data => {
+        res.send(data);
     });
-    
-    app.listen(3000);
-}
+    worker.postMessage('Start!');
+});
 
+app.listen(3000, () => { 
+    console.log("Server running at 3000");
+});
 
